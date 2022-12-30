@@ -9,7 +9,7 @@ public class HttpRequestBuilder {
     URI uri = null;
     String method = null;
     Map<String, String> headers = new HashMap<>();
-    BodyPublisher bodyPublisher = null;
+    BodyPublisher bodyPublisher = new BodyPublisher();
 
     public HttpRequestBuilder uri(URI uri) {
         if (uri == null)
@@ -62,7 +62,6 @@ public class HttpRequestBuilder {
 
     public HttpRequestBuilder DELETE() {
         this.method = "DELETE";
-        this.bodyPublisher = bodyPublisher;
         return this;
     }
 

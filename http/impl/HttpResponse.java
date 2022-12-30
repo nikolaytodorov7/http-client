@@ -11,43 +11,39 @@ public class HttpResponse<T> {
     private Map<String, String> headers = new HashMap<>();
     private String protocol;
     private int statusCode;
-    private String statusMessage;
     private String body;
 
-    public HttpResponse(BufferedReader in, FileOutputStream fileOutputStream) throws IOException {
-        String line = in.readLine();
+    public HttpResponse(InputStream inputStream, FileOutputStream fileOutputStream) throws IOException {
+        try (InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+             BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
+            extractStatusLine(bufferedReader);
+            extractHeaders(bufferedReader);
+
+            if (fileOutputStream == null)
+                extractStringBody(bufferedReader);
+            else
+                extractFileBody(bufferedReader, fileOutputStream);
+        }
+    }
+
+    private void extractStatusLine(BufferedReader bufferedReader) throws IOException {
+        String line = bufferedReader.readLine();
         if (line == null)
             throw new IllegalStateException("Invalid response!");
 
         String[] split = line.split(" ");
-        if (split.length < 3) {
-            statusCode = 400;
+        if (split.length < 2)
             throw new IllegalStateException("First line must contain protocol and status code");
-        }
 
         protocol = split[0];
-        if (!VALID_HTTP_PROTOCOLS.contains(protocol)) {
-            statusCode = 400;
+        if (!VALID_HTTP_PROTOCOLS.contains(protocol))
             throw new IllegalStateException("Invalid protocol!");
-        }
 
         try {
             statusCode = Integer.parseInt(split[1]);
         } catch (NumberFormatException e) {
-            statusCode = 400;
             throw new IllegalStateException("First part of the status code must be Integer!");
         }
-
-        statusMessage = split[2];
-        extractHeaders(in);
-
-        if (fileOutputStream == null)
-            extractStringBody(in);
-        else
-            extractFileBody(in, fileOutputStream);
-
-        in.close();
-        statusCode = 200;
     }
 
     private void extractFileBody(BufferedReader in, FileOutputStream fileOutputStream) {
@@ -99,12 +95,12 @@ public class HttpResponse<T> {
     }
 
     public static class BodyHandlers {
-        public static BodyHandler<String> ofString() {
-            return new BodyHandler<>();
+        public static BodyHandler ofString() {
+            return new BodyHandler();
         }
 
-        public static BodyHandler<Path> ofFile(Path file) {
-            return new BodyHandler<>(file);
+        public static BodyHandler ofFile(Path file) {
+            return new BodyHandler(file);
         }
     }
 }

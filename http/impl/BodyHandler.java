@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
 
-public class BodyHandler<T> {
+public class BodyHandler {
     FileOutputStream fileOutputStream = null;
 
     public BodyHandler() {

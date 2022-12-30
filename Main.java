@@ -16,6 +16,20 @@ public class Main {
         test2();
         test3();
         test4();
+
+        myTest();
+    }
+
+    private static void myTest() throws URISyntaxException, IOException {
+        HttpRequest request3 = HttpRequest.newBuilder()
+                .uri(new URI("https://postman-echo.com/post"))
+                .headers("Content-Type", "text/plain;charset=UTF-8")
+                .POST(HttpRequest.BodyPublishers.ofString("Awerfigjo3h1ti4ggk"))
+                .build();
+
+        HttpClient client = new HttpClient();
+        HttpResponse<String> send = client.send(request3, HttpResponse.BodyHandlers.ofString());
+        System.out.println(send.body());
     }
 
     private static void test1() throws URISyntaxException, IOException {

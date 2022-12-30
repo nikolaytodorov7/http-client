@@ -4,14 +4,13 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 public class HttpRequest {
     private String method;
     private URI uri;
-    private Map<String, String> headers = new HashMap<>();
+    private Map<String, String> headers;
     BodyPublisher bodyPublisher;
 
     public static HttpRequestBuilder newBuilder() {

@@ -18,37 +18,40 @@ public class HttpClient {
         return new HttpClientBuilder();
     }
 
-    public <T> HttpResponse<T> send(HttpRequest request, BodyHandler<T> responseHandler) throws IOException {
+    public <T> HttpResponse<T> send(HttpRequest request, BodyHandler responseHandler) throws IOException {
         URI uri = request.uri();
         InetAddress address = InetAddress.getByName(uri.getHost());
         Socket socket = new Socket(address, DEFAULT_PORT);
         OutputStream outputStream = socket.getOutputStream();
+        sendHeaders(request, outputStream);
+        sendBody(request, outputStream);
+
+        HttpResponse<T> httpResponse = new HttpResponse<>(socket.getInputStream(), responseHandler.fileOutputStream);
+        socket.close();
+
+        return httpResponse;
+    }
+
+    private static void sendHeaders(HttpRequest request, OutputStream outputStream) {
+        URI uri = request.uri();
         PrintWriter printWriter = new PrintWriter(outputStream, true);
         printWriter.println(String.format("%s %s HTTP/1.1", request.method(), uri.getPath()));
         printWriter.println(String.format("Host: %s", uri.getHost()));
+        int available = 0;
+        try {
+            available = request.bodyPublisher.getBody().available();
+        } catch (IOException ignored) {
+        }
+
+        printWriter.println(String.format("Content-length: %s", available));
         printWriter.println();
         printWriter.flush();
+    }
 
+    private static void sendBody(HttpRequest request, OutputStream outputStream) throws IOException {
         BodyPublisher bodyPublisher = request.bodyPublisher;
-        BodyType bodyType = bodyPublisher.bodyType;
-        switch (bodyType) {
-            case BYTE_ARR -> {
-                byte[] bodyByteArray = bodyPublisher.body;
-                outputStream.write(bodyByteArray);
-            }
-            case FILE -> {
-                FileInputStream bodyFileInputStream = bodyPublisher.fileInputStream;
-                bodyFileInputStream.transferTo(outputStream);
-            }
-            case INPUT_STREAM -> {
-                InputStream bodyInputStream = bodyPublisher.inputStream;
-                bodyInputStream.transferTo(outputStream);
-            }
-        }
+        InputStream bodyInputStream = bodyPublisher.getBody();
+        bodyInputStream.transferTo(outputStream);
         outputStream.flush();
-
-        InputStreamReader inputStreamReader = new InputStreamReader(socket.getInputStream());
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        return new HttpResponse(bufferedReader, responseHandler.fileOutputStream);
     }
 }
